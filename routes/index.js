@@ -211,4 +211,38 @@ router.get('/qrcode', function(req, res, next) {
   });
 });
 
+/* POST qrcode-auth (Mobile App -> this) */
+router.post('/qrcode-auth', function(req, res, next) {
+  var token = {
+    'user_token': req.body.user_token,
+    'qr_token': req.body.qr_token
+  };
+
+  request.post({
+    headers: {'content-type': 'application/json'},
+    url: 'http://172.19.148.233:3000/qrcode-token/validation',
+    body: token.qr_token,
+    json: true
+  }, function(error, response, body){
+    console.log(body);
+    
+    if(body.result==0)
+      res.json({result: 0});
+    else{
+      request.post({
+        headers: {'content-type': 'application/json'},
+        url: 'http://172.19.148.83/qrcode-auth',
+        body: token.user_token,
+        json: true
+      });
+      res.json({result: 1});
+    }
+  });
+
+  res.json({
+    result: 0,
+    massage: 'QR코드 발급 실패'
+  });
+});
+
 module.exports = router;
