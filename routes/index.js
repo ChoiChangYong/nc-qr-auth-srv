@@ -10,12 +10,14 @@ const request = require('request')
 
 /* POST validate user token (Web Server -> this) */
 router.post('/user-token/validation', function(req, res, next) {
-    const user_token = req.body.user_token;
+    const user_token = {
+      user_token: req.body.user_token
+    }
     const secret = req.app.get('jwt-secret');
 
-    if(user_token){
+    if(user_token.user_token){
       try {
-        const decoded = jwt.verify(user_token, secret);
+        const decoded = jwt.verify(user_token.user_token, secret);
         console.log("/user-token/validation (POST) : token is verify");
         console.log(decoded);
         res.json({
@@ -85,7 +87,7 @@ router.post('/login', function(req, res, next) {
           {
             algorithm: 'HS512',
             // expiresIn: 60 * 60 * 24 * 7
-            expiresIn: 30 // 30초, 1m:1분
+            expiresIn: '24h' // 30초, 1m:1분
           }
         )
         callback(token)
@@ -213,15 +215,16 @@ router.get('/qrcode', function(req, res, next) {
 
 /* POST qrcode-auth (Mobile App -> this) */
 router.post('/qrcode-auth', function(req, res, next) {
-  var token = {
-    'user_token': req.body.user_token,
-    'qr_token': req.body.qr_token
+  var user_token = {
+    user_token: req.body.user_token
   };
-
+  var qr_token = {
+    qr_token: req.body.qr_token
+  }
   request.post({
     headers: {'content-type': 'application/json'},
     url: 'http://172.19.148.233:3000/qrcode-token/validation',
-    body: token.qr_token,
+    body: qr_token,
     json: true
   }, function(error, response, body){
     console.log(body);
@@ -232,16 +235,12 @@ router.post('/qrcode-auth', function(req, res, next) {
       request.post({
         headers: {'content-type': 'application/json'},
         url: 'http://172.19.148.83/qrcode-auth',
-        body: token.user_token,
+        body: user_token,
         json: true
+      }, function(error, response, body){
+        res.json({result: 1});
       });
-      res.json({result: 1});
     }
-  });
-
-  res.json({
-    result: 0,
-    massage: 'QR코드 발급 실패'
   });
 });
 
