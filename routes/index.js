@@ -49,7 +49,7 @@ router.post('/login', function(req, res, next) {
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: '8804',
+    password: '8973',
     database: 'nc_qr_auth'
   });
 
@@ -125,7 +125,7 @@ router.post('/join', function(req, res, next) {
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: '8804',
+    password: '8973',
     database: 'nc_qr_auth'
   });
 
@@ -187,7 +187,7 @@ router.get('/users/:user_id', function(req, res, next) {
 router.get('/qrcode', function(req, res, next) {
   request.get({
     headers: {'content-type': 'application/json'},
-    url: 'http://172.19.148.233:3000/qrcode',
+    url: 'http://172.19.144.253:3000/qrcode',
     json: true
   }, function(error, response, body){
     console.log("=============body=============");
@@ -223,7 +223,7 @@ router.post('/qrcode-auth', function(req, res, next) {
   }
   request.post({
     headers: {'content-type': 'application/json'},
-    url: 'http://172.19.148.233:3000/qrcode-token/validation',
+    url: 'http://172.19.144.253:3000/qrcode-token/validation',
     body: qr_token,
     json: true
   }, function(error, response, body){
@@ -234,7 +234,7 @@ router.post('/qrcode-auth', function(req, res, next) {
     else{
       request.post({
         headers: {'content-type': 'application/json'},
-        url: 'http://172.19.148.83/qrcode-auth',
+        url: 'http://172.19.145.34/qrcode-auth',
         body: user_token,
         json: true
       }, function(error, response, body){
