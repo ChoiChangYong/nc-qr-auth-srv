@@ -9,15 +9,59 @@ const jwt = require('jsonwebtoken');
 const request = require('request')
 
 /* POST validate user token (Web Server -> this) */
+router.post('/guid/validation', function(req, res, next) {
+  var connection = mysql.createConnection({
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '8973',
+    database: 'nc_qr_auth'
+  });
+  connection.connect(function (err) {
+    if (err) {
+        console.error('mysql connection error');
+        console.error(err);
+        throw err;
+    }
+  });
+
+  const request = {
+    guid: req.body.uuid
+  }
+
+  connection.query('select * from user where guid=?', [request.guid], function (err, rows) {
+    if (err) {
+        console.log("select * from user where guid=?")
+        console.error(err);
+        throw err;
+    }
+    connection.end();
+
+    if (rows.length) {
+      res.json({
+        result: 1,
+        message: "디바이스 인증 성공!"
+      });
+    }
+    else{
+      res.json({
+        result: 0,
+        message: "디바이스 인증 실패.."
+      });
+    }
+  });
+});
+
+/* POST validate user token (Web Server -> this) */
 router.post('/user-token/validation', function(req, res, next) {
-    const user_token = {
+    const request = {
       user_token: req.body.user_token
     }
     const secret = req.app.get('jwt-secret');
 
-    if(user_token.user_token){
+    if(request.user_token){
       try {
-        const decoded = jwt.verify(user_token.user_token, secret);
+        const decoded = jwt.verify(request.user_token, secret);
         console.log("/user-token/validation (POST) : token is verify");
         console.log(decoded);
         res.json({
@@ -30,14 +74,14 @@ router.post('/user-token/validation', function(req, res, next) {
         console.log("/user-token/validation (POST) : token is not verify");
         res.json({
           result: 0,
-          message: "token is not verify"
+          message: "토큰이 만료되었습니다.\n다시 로그인해주세요!"
         });
       }
     } else {
       console.log("/user-token/validation (POST) : no token");
       res.json({
         result: 0,
-        message: "no token"
+        message: "로그인 정보가 존재하지 않습니다."
       });
     }
 });
@@ -242,6 +286,59 @@ router.post('/qrcode-auth', function(req, res, next) {
       });
     }
   });
+});
+
+/* POST guid (Mobile App -> this) */
+router.post('/guid', function(req, res, next) {
+  var connection = mysql.createConnection({
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '8973',
+    database: 'nc_qr_auth'
+  });
+
+  connection.connect(function (err) {
+    if (err) {
+        console.error('mysql connection error');
+        console.error(err);
+        throw err;
+    }
+  });
+
+  var request = {
+    user_token: req.body.userToken,
+    guid: req.body.uuid
+  };
+  const secret = req.app.get('jwt-secret');
+
+  try {
+    const decoded = jwt.verify(request.user_token, secret);
+    console.log("/user-token/validation (POST) : token is verify");
+    console.log(decoded);
+    console.log(decoded.id);
+    console.log(request.guid);
+
+    var params = [request.guid, decoded.id];
+    connection.query('update user set guid=? where id=?', params, function (err, rows) {
+      if (err) {
+          console.error(err);
+          throw err;
+      }
+      connection.end();
+    });
+
+    res.json({
+      result: 1,
+      message: "디바이스 등록 완료!"
+    });
+  } catch(err) {
+    console.log("/user-token/validation (POST) : token is not verify");
+    res.json({
+      result: 0,
+      message: "만료된 토큰입니다."
+    });
+  }  
 });
 
 module.exports = router;
