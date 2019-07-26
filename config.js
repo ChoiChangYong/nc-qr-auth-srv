@@ -6,7 +6,7 @@ var config = {
 	mysql: {
 		host: '127.0.0.1',
 		username: 'root',
-		password: '8973',
+		password: '8804',
 		database: 'nc_qr_auth'
 	}
 }

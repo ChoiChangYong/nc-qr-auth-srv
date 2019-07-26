@@ -6,7 +6,7 @@ const request = require('request')
 exports.request = (callback) => {
     request.get({
         headers: {'content-type': 'application/json'},
-        url: 'http://172.19.144.253:3000/qrcode',
+        url: 'http://172.19.148.232:3000/qrcode',
         json: true
     }, function(error, response, body){
         if(body.result==1)
@@ -22,7 +22,7 @@ exports.request = (callback) => {
 exports.requestValidation = (qr_token, callback) => {
     request.post({
         headers: {'content-type': 'application/json'},
-        url: 'http://172.19.144.253:3000/qrcode-token/validation',
+        url: 'http://172.19.148.232:3000/qrcode-token/validation',
         body: qr_token,
         json: true
     }, function(error, response, body){
@@ -39,7 +39,7 @@ exports.requestValidation = (qr_token, callback) => {
 exports.requestQRcodeLogin = (user_token, callback) => {
     request.post({
         headers: {'content-type': 'application/json'},
-        url: 'http://172.19.145.34/qrcode-auth',
+        url: 'http://172.19.148.83/qrcode-auth',
         body: user_token,
         json: true
     }, function(error, response, body){

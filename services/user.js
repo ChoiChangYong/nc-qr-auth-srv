@@ -11,7 +11,7 @@ exports.selectById = (id, callback) => {
     }).then(function(result) {
         callback(result);
     }).catch(function(err){
-        callback("empty");
+        console.log(err);
     });
 }
 
@@ -29,12 +29,14 @@ exports.insert = (user, callback) => {
     const salt = bcrypt.genSaltSync(10); // salt값 생성, 10이 default
     const hash = bcrypt.hashSync(user.password, salt); // Digest
     user.password = hash;
-
+    console.log(user);
     User.create({
         id: user.id,
         password: user.password,
         name: user.name 
     }).then(function(result) {
-        callback();
+        callback(true);
+    }).catch(function(err){
+        callback(false);
     });
 }
