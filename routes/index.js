@@ -4,7 +4,7 @@ var login = require('../controllers/login');
 var join = require('../controllers/join');
 
 /* POST login (Web Server -> this) */
-router.post('/login', login.checkUserInfo);
+router.post('/login', login.authenticationUser);
 
 /* POST join (Web Server -> this) */
 router.post('/join', join.createUser);

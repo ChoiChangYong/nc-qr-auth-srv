@@ -6,7 +6,7 @@ var Guid = require('../services').Guid;
 /**
  * 유저 아이디, 비밀번호 검증
  */
-exports.checkUserInfo = (req, res, next) => {
+exports.authenticationUser = (req, res, next) => {
     const secret = req.app.get('jwt-secret');
     var request = {
         'id': req.body.id,
