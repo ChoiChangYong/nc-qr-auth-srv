@@ -10,7 +10,7 @@ var User = sequelize.define('user', {
 		allowNull: false
     },
     id: {
-		type: Sequelize.STRING(30),
+		type: Sequelize.STRING(255),
 		primaryKey: true,
 		unique: true,
 		allowNull: false
@@ -24,7 +24,7 @@ var User = sequelize.define('user', {
 		allowNull: true
 	},
 	name: {
-		type: Sequelize.STRING(50),
+		type: Sequelize.STRING(20),
 		allowNull: false
 	}
 }, {
