@@ -1,15 +1,15 @@
 var User = require('../services').User;
 
-exports.createUser = (req, res, next) => {
+exports.addUser = (req, res, next) => {
     var user = {
         'id': req.body.id,
         'password': req.body.password,
         'name': req.body.name
     };
     console.log(user);
-    User.selectById(user.id, (callback) => {
+    User.verifyId(user.id, (callback) => {
         if (callback==null) {
-            User.insert(user, (callback) => {
+            User.addUser(user, (callback) => {
                 if(callback)
                     res.json({result: 1, message: "회원가입 성공"});
                 else

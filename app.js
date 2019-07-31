@@ -10,6 +10,34 @@ var indexRouter = require('./routes/index');
 
 var app = express();
 
+// mysql & session setting
+var session = require("express-session");
+var mysqlStore = require("express-mysql-session")(session);
+
+var mysqlOptions = {
+  host: '172.19.148.51',
+  port: 3306,
+  user: 'root',
+  password: '8804',
+  database: 'nc_qr_auth',
+  clearExpired: true,
+  checkExpirationInterval: 1000*60*10,
+  expiration: config.sessionExpireTime
+}
+
+var sessionStore = new mysqlStore(mysqlOptions);
+
+app.use(session({
+  key: 'user-session',
+  secret: 'servicePlatform',
+  store: sessionStore,
+  saveUninitialized: false,
+  resave: false
+}));
+
+// mysql & session setting end
+
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');

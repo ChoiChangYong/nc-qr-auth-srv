@@ -4,14 +4,13 @@ var Sequelize = require('sequelize');
 var sequelize = require('../common/mysql');
 
 var User = sequelize.define('user', {
-	idx: {
-		type: Sequelize.INTEGER(11),
-		autoIncrement: true,
+	uuid: {
+		type: Sequelize.STRING(128),
+		primaryKey: true,
 		allowNull: false
     },
     id: {
 		type: Sequelize.STRING(255),
-		primaryKey: true,
 		unique: true,
 		allowNull: false
 	},
