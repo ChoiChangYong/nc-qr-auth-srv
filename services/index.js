@@ -1,6 +1,6 @@
 /* services */
 
 exports.User = require('./user');
-exports.Token = require('./token');
+exports.Session = require('./session');
 exports.Qrcode = require('./qrcode');
-exports.Guid = require('./guid');
+exports.DeviceId = require('./deviceId');

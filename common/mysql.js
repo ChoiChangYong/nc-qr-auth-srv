@@ -3,11 +3,11 @@ var config = require('../config');
 var Sequelize = require('sequelize');
 
 var sequelize = new Sequelize(
-	config.config.mysql.database,
-	config.config.mysql.username,
-    config.config.mysql.password, 
+	config.mysqlConfig.mysql.database,
+	config.mysqlConfig.mysql.username,
+    config.mysqlConfig.mysql.password, 
     {
-		host: config.config.mysql.host,
+		host: config.mysqlConfig.mysql.host,
 		dialect: 'mysql'
 	}
 );
