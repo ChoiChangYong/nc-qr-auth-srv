@@ -18,7 +18,7 @@ var User = sequelize.define('user', {
 		type: Sequelize.STRING(255),
 		allowNull: false,
 	},
-	guid: {
+	device_id: {
 		type: Sequelize.STRING(255),
 		allowNull: true
 	},

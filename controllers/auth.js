@@ -8,229 +8,224 @@ var config = require('../config');
 /**
  * 유저 아이디, 비밀번호 검증
  */
-exports.authenticationUser = (req, res, next) => {
+exports.authenticationUser = async (req, res, next) => {
     var request = {
         'id': req.body.id,
         'password': req.body.password
     };
 
-    User.verifyId(request.id, (callback) => {
-        if (callback!=null) {
-            const userUUID = callback.uuid;
+    const verifyIdResult = await User.verifyId(request.id);
 
-            User.verifyPassword(request.password, callback.password, (callback) => {
-                if(callback){
-                    // 유저 세션 생성
-                    req.session.appId = config.appId.web;
-                    req.session.userUUID = userUUID;
-                    console.log(req.session);
-                    req.session.save(() => {
-                        res.json({result: 1, sessionID: req.sessionID});
-                    });
-                } else {
-                    res.json({result: 0, message: "아이디 또는 비밀번호가 맞지 않습니다."});
-                }
-            });
-        } else {
-            res.json({result: 0, message: "아이디 또는 비밀번호가 맞지 않습니다."});
-        }
+    if (verifyIdResult==null) {
+        return res.json({result: 0, message: "아이디 또는 비밀번호가 맞지 않습니다."});
+    }
+
+    const verifyPasswordResult = await User.verifyPassword(request.password, verifyIdResult.password);
+    
+    if(!verifyPasswordResult){
+        return res.json({result: 0, message: "아이디 또는 비밀번호가 맞지 않습니다."});
+    } 
+
+    // 유저 세션 생성
+    const userUUID = verifyIdResult.uuid;
+    req.session.appId = config.appId.web;
+    req.session.userUUID = userUUID;
+    console.log(req.session);
+    req.session.save(() => {
+        res.json({result: 1, sessionID: req.sessionID});
     });
 };
 
 /**
  * 유저 세션 검증
  */
-exports.verifyUserSession = (req, res, next) => {
+exports.verifyUserSession = async (req, res, next) => {
     const request = {
         sessionID: req.body.sessionID
     }
 
-    if(request.sessionID){
-        Session.verifyUserSession(request.sessionID, (callback) => {
-            if(callback!=null)
-                res.json({result: 1, message: "session is verify"});
-            else
-                res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
-        });
-    } else {
-        res.json({result: 0, message: "로그인 정보가 존재하지 않습니다."});
+    if(!request.sessionID){
+        return res.json({result: 0, message: "로그인 정보가 존재하지 않습니다."});
     }
+    
+    const verifyUserSessionResult = await Session.verifyUserSession(request.sessionID);
+    
+    if(verifyUserSessionResult==null){
+        res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
+    }
+
+    res.json({result: 1});
 };
 
 /**
  * SessionID로 유저 정보 검색, 반환
  */
-exports.getUserInfoBySessionID = (req, res, next) => {
+exports.getUserInfoBySessionID = async (req, res, next) => {
     const request = {
         sessionID: req.params.sessionID
     }
 
-    if(request.sessionID){
-        Session.verifyUserSession(request.sessionID, (callback) => {
-            if(callback!=null){
-                Session.parseSession(callback.data, (callback) => {
-                    const session = callback;
-                    User.getUserInfoByUUID(session.userUUID, (callback) => {
-                        res.json({result: 1, id: callback.id, name: callback.name});
-                    });
-                });
-            } else {
-                res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
-            }
-        });
-    } else {
-        res.json({result: 0, message: "유저 세션이 존재하지 않습니다."});
+    if(!request.sessionID){
+        return res.json({result: 0, message: "유저 세션이 존재하지 않습니다."});
     }
+
+    const verifyUserSessionResult = await Session.verifyUserSession(request.sessionID);
+    
+    if(verifyUserSessionResult==null){
+        return res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
+    }
+
+    const parseSessionResult = await Session.parseSession(verifyUserSessionResult.data);
+    const session = parseSessionResult;
+    const getUserInfoByUUIDResult = await User.getUserInfoByUUID(session.userUUID);
+    res.json({result: 1, id: getUserInfoByUUIDResult.id, name: getUserInfoByUUIDResult.name});
 };
 
 /**
  * 유저 세션 삭제
  */
-exports.deleteUserSession = (req, res, next) => {
+exports.deleteUserSession = async (req, res, next) => {
     const request = {
         sessionID: req.params.sessionID
     }
 
-    if(request.sessionID){
-        Session.deleteSession(request.sessionID, (callback) => {
-            if(callback==1)
-                res.json({result: 1, message: "세션 삭제 성공"});
-            else
-                res.json({result: 0, message: "세션 삭제 실패! 삭제된 row 개수:"+callback});
-        });
-    } else {
-        res.json({result: 0, message: "유저 세션이 존재하지 않습니다."});
+    if(!request.sessionID){
+        return res.json({result: 0, message: "유저 세션이 존재하지 않습니다."});
+    } 
+
+    const deleteSessionResult = await Session.deleteSession(request.sessionID);
+
+    if(deleteSessionResult!=1){
+        return res.json({result: 0, message: "세션 삭제 실패! 삭제된 row 개수:"+deleteSessionResult});
     }
+
+    res.json({result: 1, message: "세션 삭제 성공"});
 };
 
 /**
  * QR코드 발급
  */
-exports.createQrcode = (req, res, next) => {
+exports.createQrcode = async (req, res, next) => {
     const request = {
         instanceId: req.params.instanceId
     }
 
-    Qrcode.createQrcode(request.instanceId, (callback) => {
-        if(!callback.result){
-            res.json({result: 0, massage: 'QR코드 발급 실패'});
-        } else {
-            res.json({result: 1, qrcode: callback.qrcode, massage: 'QR코드 발급 성공'});
-        }
-    });
+    const createQrcodeResult = await Qrcode.createQrcode(request.instanceId);
+
+    if(!createQrcodeResult.result){
+        return res.json({result: 0, massage: 'QR코드 발급 실패'});
+    } 
+    
+    res.json({result: 1, qrcode: createQrcodeResult.qrcode, massage: 'QR코드 발급 성공'});
 };
 
 /**
  * QR코드 로그인 인증
  */
-exports.authenticationQrcode = (req, res, next) => {
+exports.authenticationQrcode = async (req, res, next) => {
     var request = {
         userSessionID: req.body.userSessionID,
         qrcodeSessionID: req.body.qrcodeSessionID
     };
 
-    if(request.userSessionID){
-        Session.verifyUserSession(request.userSessionID, (callback) => {
-            if(callback!=null){
-                Session.parseSession(callback.data, (callback) => {
-                    const userSession = callback;
-                    // 유저 세션 셋팅
-                    req.session.appId = config.appId.qrcode;
-                    req.session.userUUID = userSession.userUUID;
-                    console.log(req.session);
+    if(!request.userSessionID){
+        return res.json({result: 0, message: "로그인 정보가 존재하지 않습니다."});
+    } 
+   
+    const verifyUserSessionResult = await Session.verifyUserSession(request.userSessionID);
 
-                    Qrcode.verifyQrCodeSession(request.qrcodeSessionID, (callback) => {
-                        if(callback.result){
-                            Session.parseSession(callback.qrcodeSession.data, (callback) => {
-                                const qrcodeSession = callback;
+    if(verifyUserSessionResult==null){
+        return res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
+    } 
+    
+    const parseUserSessionResult = await Session.parseSession(verifyUserSessionResult.data);
+    const userSession = parseUserSessionResult;
 
-                                console.log('req.sessionID : '+req.sessionID);
-                                console.log('qrcodeSession.instanceId : '+qrcodeSession.instanceId);
-                                // 유저 세션 생성
-                                req.session.save(() => {
-                                    Qrcode.processQrCodeLogin(req.sessionID, qrcodeSession.instanceId, (callback) => {
-                                        if(callback){
-                                            Qrcode.deleteQrcodeSession(request.qrcodeSessionID, (callback) => {
-                                                if(callback.result)
-                                                    console.log("세션삭제 성공");
-                                                else
-                                                    console.log("세션삭제 실패");
-                                            });
-                                            res.json({result: 1});
-                                        } else {
-                                            res.json({result: 0});
-                                        }
-                                    });
-                                });
-                            });
-                        } else {
-                            res.json({result: 0, message: "QR코드 세션이 만료되었습니다.\n다시 발급받아주세요!"});
-                        }
-                    });
-                });
-            } else {
-                res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
-            }
-        });
-    } else {
-        res.json({result: 0, message: "로그인 정보가 존재하지 않습니다."});
-    }
+    // 유저 세션 셋팅
+    req.session.appId = config.appId.qrcode;
+    req.session.userUUID = userSession.userUUID;
+    console.log(req.session);
+
+    const verifyQrCodeSessionResult = await Qrcode.verifyQrCodeSession(request.qrcodeSessionID);
+
+    if(!verifyQrCodeSessionResult.result){
+        return res.json({result: 2, message: "QR코드 세션이 만료되었습니다.\n다시 발급받아주세요!"});
+    } 
+    
+    const parseQrCodeSessionResult = await Session.parseSession(verifyQrCodeSessionResult.qrcodeSession.data);
+    const qrcodeSession = parseQrCodeSessionResult;
+
+    console.log('req.sessionID : '+req.sessionID);
+    console.log('qrcodeSession.instanceId : '+qrcodeSession.instanceId);
+
+    // 유저 세션 생성
+    req.session.save(async () => {
+        const processQrCodeLoginResult = await Qrcode.processQrCodeLogin(req.sessionID, qrcodeSession.instanceId);
+        if(!processQrCodeLoginResult){
+            return res.json({result: 3, message: "QR코드 로그인 처리 실패!"});
+        } 
+        
+        const deleteQrcodeSessionResult = await Qrcode.deleteQrcodeSession(request.qrcodeSessionID);
+
+        if(!deleteQrcodeSessionResult.result){
+            console.log("세션삭제 실패");
+            return res.json({result: 4, message: "세션삭제 실패!"});
+        }
+
+        res.json({result: 1});
+    });
 }
 
 /**
  * 디바이스 등록
  */
-exports.registerDevice = (req, res, next) => {
-    var request = {
-        sessionID: req.body.sessionID,
-        deviceId: req.body.deviceId
-    };
+// exports.registerDevice = async (req, res, next) => {
+//     var request = {
+//         sessionID: req.body.sessionID,
+//         deviceId: req.body.deviceId
+//     };
 
-    Session.verifyUserSession(request.sessionID, (callback) => {
-        if(callback!=null){
-            Session.parseSession(callback.data, (callback) => {
-                const session = callback;
-                DeviceId.updateDeviceIdByUUID(callback.userUUID, request.deviceId, (callback) => {
-                    res.json({
-                        result: 1,
-                        message: "디바이스 등록 완료!"
-                    });
-                });
-            });
-        } else {
-            res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
-        }
-    });
-};
+//     const verifyUserSessionResult = await Session.verifyUserSession(request.sessionID);
+//     if(verifyUserSessionResult==null){
+//         res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
+//     } else {
+//         const parseSessionResult = await Session.parseSession(verifyUserSessionResult.data);
+//         const session = parseSessionResult;
+//         const updateDeviceIdByUUIDResult = await DeviceId.updateDeviceIdByUUID(session.userUUID);
+//         res.json({result: 1, message: "디바이스 등록 완료!"});
+//     }
+// };
 
 /**
  * 등록된 디바이스인지 검사
  */
-exports.checkDevice = (req, res, next) => {
-    const request = {
-        sessionID: req.body.sessionID,
-        deviceId: req.body.deviceId
-    }
-    var user = {}
+// exports.checkDevice = async (req, res, next) => {
+//     const request = {
+//         sessionID: req.body.sessionID,
+//         deviceId: req.body.deviceId
+//     }
+//     var user = {}
 
-    Session.verifyUserSession(request.sessionID, (callback) => {
-        if(callback.result){
-            user.id = callback.decoded.id;
-            user.name = callback.decoded.name;
+//     const verifyUserSessionResult = await Session.verifyUserSession(request.sessionID);
+//     if(verifyUserSessionResult==null){
+//         res.json({result: 0, message: "세션이 만료되었습니다.\n다시 로그인해주세요!"});
+//     } else {
+//         const parseSessionResult = await Session.parseSession(verifyUserSessionResult.data);
+//         const userSession = parseSessionResult;
+//         const getUserInfoByUUIDResult = await User.getUserInfoByUUID(userSession.userUUID);
 
-            User.verifyId(callback.decoded.id, (callback) => {
-                if (callback!="empty") {
-                    DeviceId.compare(request.deviceId, callback.deviceId, (callback) => {
-                        if(callback)
-                            res.json({result: 1, id:user.id, name:user.name, message: "디바이스 인증 성공!"});
-                        else
-                            res.json({result: 0, message: "디바이스 인증 실패.."});
-                    });
-                } else {
-                    res.json({result: 0, message: "디바이스 인증 정보가 없습니다."});
-                }
-            });
-        }
-    });
-    
-}
+//         user.id = getUserInfoByUUIDResult.id;
+//         user.name = getUserInfoByUUIDResult.name;
+
+//         // const verifyIdResult = await User.verifyId(getUserInfoByUUIDResult.id);
+//         // if (verifyIdResult=="empty") {
+//         //     res.json({result: 0, message: "디바이스 인증 정보가 없습니다."});
+//         // } else {
+//         //     const compareResult = await DeviceId.compare(request.deviceId, verifyIdResult.deviceId);
+//         //     if(compareResult)
+//         //         res.json({result: 1, id:user.id, name:user.name, message: "디바이스 인증 성공!"});
+//         //     else
+//         //         res.json({result: 0, message: "디바이스 인증 실패.."});
+//         // }
+//     }           
+// }
