@@ -9,10 +9,10 @@ router.post('/login', auth.authenticationUser);
 /* POST join (Web Server -> this) */
 router.post('/join', join.addUser);
 
-/* POST validate user session (Web Server -> this) */
+/* POST verify user session (Web Server, Mobile App -> this) */
 router.post('/session/verification', auth.verifyUserSession);
 
-/* GET user info by session id (Web Server -> this) */
+/* GET user info by session id (Web Server, Mobile App -> this) */
 router.get('/users/:sessionID', auth.getUserInfoBySessionID);
 
 /* DELETE user session (Web Server -> this) */
@@ -24,10 +24,10 @@ router.get('/qrcode/:instanceId', auth.createQrcode);
 /* POST qrcode-auth (Mobile App -> this) */
 router.post('/qrcode-auth', auth.authenticationQrcode);
 
-/* POST guid (Mobile App -> this) */
-router.post('/deviceId', auth.registerDevice);
+/* POST deviceId (Mobile App -> this) */
+// router.post('/deviceId', auth.registerDevice);
 
-/*  */
-router.post('/deviceId/verification', auth.checkDevice);
+/* POST verify deviceId (Mobile App -> this) */
+// router.post('/deviceId/verification', auth.checkDevice);
 
 module.exports = router;
