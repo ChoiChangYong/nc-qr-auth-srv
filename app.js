@@ -21,7 +21,7 @@ var mysqlOptions = {
   password: '8804',
   database: 'nc_qr_auth',
   clearExpired: true,
-  checkExpirationInterval: 1000*60*10,
+  checkExpirationInterval: config.sessionExpirationInterval,
   expiration: config.sessionExpireTime
 }
 

@@ -95,7 +95,9 @@ exports.deleteUserSession = async (req, res, next) => {
 
     const deleteSessionResult = await Session.deleteSession(request.sessionID);
 
-    if(deleteSessionResult!=1){
+    if(deleteSessionResult==0){
+        return res.json({result: 1, message: "유저 세션이 존재하지 않습니다."});
+    } else if(deleteSessionResult!=1){
         return res.json({result: 0, message: "세션 삭제 실패! 삭제된 row 개수:"+deleteSessionResult});
     }
 
@@ -141,13 +143,9 @@ exports.authenticationQrcode = async (req, res, next) => {
     const parseUserSessionResult = await Session.parseSession(verifyUserSessionResult.data);
     const userSession = parseUserSessionResult;
 
-    // 유저 세션 셋팅
-    req.session.appId = config.appId.qrcode;
-    req.session.userUUID = userSession.userUUID;
-    console.log(req.session);
-
     const verifyQrCodeSessionResult = await Qrcode.verifyQrCodeSession(request.qrcodeSessionID);
 
+    console.log(verifyQrCodeSessionResult);
     if(!verifyQrCodeSessionResult.result){
         return res.json({result: 2, message: "QR코드 세션이 만료되었습니다.\n다시 발급받아주세요!"});
     } 
@@ -155,23 +153,28 @@ exports.authenticationQrcode = async (req, res, next) => {
     const parseQrCodeSessionResult = await Session.parseSession(verifyQrCodeSessionResult.qrcodeSession.data);
     const qrcodeSession = parseQrCodeSessionResult;
 
-    console.log('req.sessionID : '+req.sessionID);
+    // 유저 세션 셋팅
+    req.session.appId = config.appId.qrcode;
+    req.session.userUUID = userSession.userUUID;
+    const userSessionID = req.sessionID;
+
+    console.log('userSessionID : '+userSessionID);
     console.log('qrcodeSession.instanceId : '+qrcodeSession.instanceId);
 
-    // 유저 세션 생성
-    req.session.save(async () => {
-        const processQrCodeLoginResult = await Qrcode.processQrCodeLogin(req.sessionID, qrcodeSession.instanceId);
-        if(!processQrCodeLoginResult){
-            return res.json({result: 3, message: "QR코드 로그인 처리 실패!"});
-        } 
+    // 유저 세션 저장
+    req.session.save(() => {
+        Qrcode.processQrCodeLogin(userSessionID, qrcodeSession.instanceId, (callback) => {
+            if(!callback){
+                return res.json({result: 3, message: "QR코드 로그인 처리 실패!"});
+            }
+        });
         
-        const deleteQrcodeSessionResult = await Qrcode.deleteQrcodeSession(request.qrcodeSessionID);
-
-        if(!deleteQrcodeSessionResult.result){
-            console.log("세션삭제 실패");
-            return res.json({result: 4, message: "세션삭제 실패!"});
-        }
-
+        Qrcode.deleteQrcodeSession(request.qrcodeSessionID, (callback) => {
+            if(!callback.result){
+                console.log("세션삭제 실패");
+                return res.json({result: 4, message: "세션삭제 실패!"});
+            }
+        });
         res.json({result: 1});
     });
 }

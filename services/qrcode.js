@@ -41,8 +41,7 @@ exports.verifyQrCodeSession = (qrcodeSessionID) => {
 /**
  * Web Server로 QR코드 로그인 인증 요청
  */
-exports.processQrCodeLogin = (userSessionID, instanceId) => {
-    return new Promise(resolve => { 
+exports.processQrCodeLogin = (userSessionID, instanceId, callback) => {
         request.post({
             headers: {'content-type': 'application/json'},
             url: config.serverIP.webSrv+'/qrcode-auth',
@@ -52,19 +51,18 @@ exports.processQrCodeLogin = (userSessionID, instanceId) => {
             },
             json: true
         }, function(error, response, body){
-            if(body.result==0)
-                resolve(false)
-            else
-                resolve(true);
+            if(body.result==0){
+                callback(false)
+            } else{
+                callback(true);
+            }
         });
-    });
 };
 
 /**
- * Auth Server로 QR코드 세션 삭제 요청
+ * QR Manage Server로 QR코드 세션 삭제 요청
  */
-exports.deleteQrcodeSession = (qrcodeSessionID) => {
-    return new Promise(resolve => { 
+exports.deleteQrcodeSession = (qrcodeSessionID, callback) => {
         request.delete({
             headers: {'content-type': 'application/json'},
             url: config.serverIP.qrcodeSrv+'/sessions/'+qrcodeSessionID,
@@ -72,10 +70,9 @@ exports.deleteQrcodeSession = (qrcodeSessionID) => {
         }, function(error, response, body){
             console.log(body);
             if(body.result==0){
-                resolve({result:false});
+                callback({result:false});
             } else {
-                resolve({result:true});
+                callback({result:true});
             }
         });
-    });
 };

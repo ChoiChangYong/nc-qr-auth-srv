@@ -4,7 +4,6 @@ var mysqlConfig = {
 	debug: true,
 	port: 3306,
 	mysql: {
-		// host: '127.0.0.1',
 		host: '172.19.148.51',
 		username: 'root',
 		password: '8804',
@@ -28,10 +27,11 @@ var appId = {
 }
 
 var sessionExpireTime = 60*60*1000;   // 1시간
-
+var sessionExpirationInterval = 10*60*1000;
 module.exports = {
 	'mysqlConfig': mysqlConfig,
 	'serverIP': serverIP,
 	'appId': appId,
-	'sessionExpireTime': sessionExpireTime
+	'sessionExpireTime': sessionExpireTime,
+	'sessionExpirationInterval': sessionExpirationInterval
 }
