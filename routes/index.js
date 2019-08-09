@@ -24,10 +24,4 @@ router.get('/qrcode/:instanceId', auth.createQrcode);
 /* POST qrcode-auth (Mobile App -> this) */
 router.post('/qrcode-auth', auth.authenticationQrcode);
 
-/* POST deviceId (Mobile App -> this) */
-// router.post('/deviceId', auth.registerDevice);
-
-/* POST verify deviceId (Mobile App -> this) */
-// router.post('/deviceId/verification', auth.checkDevice);
-
 module.exports = router;
